@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>El Periódico — Learn Spanish through News</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --primary: #1a3a2a;
+    --accent: #c8a84b;
+    --accent-light: #f5e9c8;
+    --surface: #faf9f5;
+    --card: #ffffff;
+    --text: #1a1a1a;
+    --muted: #6b7280;
+    --border: rgba(0,0,0,0.1);
+    --green: #2d6a4f;
+    --red: #c0392b;
+    --blue: #1a5276;
+  }
+  body { font-family: 'DM Sans', sans-serif; background: var(--surface); color: var(--text); min-height: 100vh; font-size: 15px; line-height: 1.6; }
+
+  /* API KEY MODAL */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .modal { background: var(--card); border-radius: 16px; padding: 32px; max-width: 480px; width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+  .modal-logo { font-family: 'Playfair Display', serif; font-size: 26px; color: var(--primary); margin-bottom: 6px; }
+  .modal-sub { color: var(--muted); font-size: 14px; margin-bottom: 24px; }
+  .modal label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; color: var(--text); }
+  .modal input { width: 100%; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 14px; font-family: 'DM Sans', sans-serif; color: var(--text); background: #f9fafb; margin-bottom: 16px; }
+  .modal input:focus { outline: none; border-color: var(--accent); background: #fff; }
+  .modal-note { font-size: 12px; color: var(--muted); margin-top: 12px; line-height: 1.6; }
+  .modal-note a { color: var(--blue); }
+  .modal-demo { display: inline-block; margin-top: 10px; font-size: 13px; color: var(--muted); cursor: pointer; text-decoration: underline; }
+
+  /* LAYOUT */
+  .header { background: var(--primary); padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid var(--accent); }
+  .header-title { font-family: 'Playfair Display', serif; color: var(--accent); font-size: 24px; }
+  .header-sub { color: rgba(255,255,255,0.55); font-size: 12px; margin-top: 2px; }
+  .level-badge { background: var(--accent); color: var(--primary); font-size: 12px; font-weight: 500; padding: 4px 12px; border-radius: 20px; }
+  .nav { display: flex; background: var(--primary); padding: 0 24px; gap: 4px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+  .nav-btn { background: none; border: none; color: rgba(255,255,255,0.6); padding: 10px 16px; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; border-bottom: 2px solid transparent; transition: all 0.2s; margin-bottom: -1px; }
+  .nav-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .nav-btn:hover:not(.active) { color: rgba(255,255,255,0.9); }
+  .content { padding: 20px 24px; max-width: 800px; margin: 0 auto; }
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* CONTROLS */
+  .fetch-bar { display: flex; gap: 10px; margin-bottom: 20px; align-items: center; flex-wrap: wrap; }
+  .topic-select { flex: 1; min-width: 160px; padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 14px; background: var(--card); color: var(--text); }
+  .btn-primary { background: var(--primary); color: var(--accent); border: none; padding: 9px 20px; border-radius: 8px; cursor: pointer; font-weight: 500; font-size: 14px; font-family: 'DM Sans', sans-serif; transition: opacity 0.2s; white-space: nowrap; }
+  .btn-primary:hover { opacity: 0.85; }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-outline { background: transparent; color: var(--primary); border: 1.5px solid var(--primary); padding: 7px 16px; border-radius: 8px; cursor: pointer; font-weight: 500; font-size: 13px; font-family: 'DM Sans', sans-serif; transition: all 0.2s; }
+  .btn-outline:hover { background: var(--primary); color: var(--accent); }
+
+  /* NEWS */
+  .news-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+  .news-source { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); margin-bottom: 8px; }
+  .news-title { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; margin-bottom: 12px; line-height: 1.4; color: var(--primary); }
+  .news-body { color: #374151; font-size: 15px; line-height: 1.9; margin-bottom: 16px; }
+  .vocab-highlight { background: var(--accent-light); border-bottom: 2px solid var(--accent); cursor: pointer; border-radius: 2px; padding: 0 2px; font-weight: 500; transition: background 0.2s; }
+  .vocab-highlight:hover { background: #f0d878; }
+
+  /* VOCAB CARDS */
+  .vocab-section { margin-top: 20px; }
+  .section-label { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 12px; }
+  .vocab-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+  .vocab-card { background: #fafafa; border: 1px solid var(--border); border-radius: 10px; padding: 12px; cursor: pointer; transition: all 0.2s; position: relative; }
+  .vocab-card:hover { border-color: var(--accent); background: var(--accent-light); }
+  .vocab-card.saved { border-color: var(--green); background: #f0fff4; }
+  .vocab-word { font-weight: 500; font-size: 15px; color: var(--primary); }
+  .vocab-pos { font-size: 11px; color: var(--muted); margin: 2px 0; font-style: italic; }
+  .vocab-en { font-size: 13px; color: #374151; }
+  .vocab-zh { font-size: 13px; color: var(--blue); }
+  .vocab-save-btn { position: absolute; top: 8px; right: 8px; background: none; border: none; cursor: pointer; font-size: 16px; opacity: 0.4; transition: opacity 0.2s; }
+  .vocab-card.saved .vocab-save-btn { opacity: 1; }
+
+  /* GRAMMAR */
+  .grammar-box { background: #eef4ff; border: 1px solid rgba(26,82,118,0.2); border-left: 4px solid #378add; border-radius: 0 12px 12px 0; padding: 16px; margin-top: 16px; }
+  .grammar-title { font-weight: 500; color: var(--blue); font-size: 14px; margin-bottom: 8px; }
+  .grammar-body { font-size: 13px; color: #374151; line-height: 1.8; }
+  .grammar-example { margin-top: 8px; padding: 8px 12px; background: rgba(255,255,255,0.7); border-radius: 6px; font-size: 13px; border-left: 3px solid var(--accent); }
+  .grammar-es { color: var(--primary); font-weight: 500; }
+  .grammar-en { color: var(--muted); font-size: 12px; }
+
+  /* LOADING / PLACEHOLDER */
+  .loading-box { text-align: center; padding: 40px 20px; color: var(--muted); }
+  .spinner { width: 32px; height: 32px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .placeholder { text-align: center; padding: 60px 20px; color: var(--muted); }
+  .placeholder-icon { font-size: 40px; margin-bottom: 12px; }
+  .placeholder-title { font-family: 'Playfair Display', serif; font-size: 18px; color: var(--primary); margin-bottom: 8px; }
+  .placeholder-text { font-size: 14px; max-width: 340px; margin: 0 auto; }
+  .error-box { background: #fff0f0; border: 1px solid #f5c6c6; border-radius: 10px; padding: 16px; font-size: 14px; color: var(--red); }
+
+  /* SAVED VOCAB */
+  .tab-bar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+  .tab-btn { padding: 6px 14px; border-radius: 20px; border: 1.5px solid var(--border); background: var(--card); cursor: pointer; font-size: 13px; font-family: 'DM Sans', sans-serif; color: var(--muted); transition: all 0.2s; }
+  .tab-btn.active { background: var(--primary); color: var(--accent); border-color: var(--primary); }
+  .saved-list { display: flex; flex-direction: column; gap: 10px; }
+  .saved-item { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .saved-word { font-weight: 500; font-size: 16px; color: var(--primary); }
+  .saved-translations { font-size: 13px; color: var(--muted); }
+  .saved-tag { font-size: 11px; background: #eef4ff; color: var(--blue); padding: 3px 8px; border-radius: 6px; white-space: nowrap; }
+
+  /* GAMES */
+  .game-selector { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 24px; }
+  .game-card { background: var(--card); border: 2px solid var(--border); border-radius: 12px; padding: 20px; cursor: pointer; transition: all 0.2s; text-align: center; }
+  .game-card:hover, .game-card.active { border-color: var(--accent); background: var(--accent-light); }
+  .game-icon { font-size: 28px; margin-bottom: 8px; }
+  .game-name { font-weight: 500; font-size: 14px; color: var(--primary); }
+  .game-desc { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .game-area { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; min-height: 220px; }
+  .game-question { font-family: 'Playfair Display', serif; font-size: 22px; color: var(--primary); text-align: center; margin-bottom: 24px; font-weight: 700; }
+  .game-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .game-option { background: #f9fafb; border: 1.5px solid var(--border); border-radius: 10px; padding: 14px; cursor: pointer; font-size: 14px; font-family: 'DM Sans', sans-serif; transition: all 0.2s; text-align: center; color: var(--text); }
+  .game-option:hover { border-color: var(--accent); background: var(--accent-light); }
+  .game-option.correct { border-color: var(--green); background: #f0fff4; color: var(--green); font-weight: 500; }
+  .game-option.wrong { border-color: var(--red); background: #fff0f0; color: var(--red); }
+  .score-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding: 10px 16px; background: #f9fafb; border-radius: 8px; font-size: 14px; }
+  .score-val { font-weight: 500; color: var(--primary); }
+  .fill-input { width: 100%; padding: 10px 14px; font-size: 16px; border: 1.5px solid var(--border); border-radius: 8px; font-family: 'DM Sans', sans-serif; margin-bottom: 10px; color: var(--text); background: var(--card); }
+  .fill-input:focus { outline: none; border-color: var(--accent); }
+  .fill-input.correct { border-color: var(--green); background: #f0fff4; }
+  .fill-input.wrong { border-color: var(--red); background: #fff0f0; }
+  .feedback-msg { text-align: center; font-size: 14px; padding: 10px; border-radius: 8px; margin-top: 10px; font-weight: 500; }
+  .feedback-msg.correct { background: #f0fff4; color: var(--green); }
+  .feedback-msg.wrong { background: #fff0f0; color: var(--red); }
+
+  /* TIPS */
+  .tip-box { background: var(--card); border: 1px solid var(--border); border-left: 4px solid var(--accent); border-radius: 0 8px 8px 0; padding: 14px 16px; margin-bottom: 12px; font-size: 14px; }
+  .tip-label { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); margin-bottom: 6px; }
+
+  /* DEMO BADGE */
+  .demo-badge { display: inline-block; background: #fff3cd; color: #856404; font-size: 11px; font-weight: 500; padding: 3px 10px; border-radius: 20px; border: 1px solid #ffc107; margin-left: 10px; vertical-align: middle; }
+
+  @media (max-width: 600px) {
+    .content { padding: 14px 14px; }
+    .header { padding: 12px 14px; }
+    .nav { padding: 0 10px; }
+    .game-options { grid-template-columns: 1fr; }
+    .nav-btn { padding: 10px 10px; font-size: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- API KEY MODAL -->
+<div class="modal-overlay" id="apiModal">
+  <div class="modal">
+    <div class="modal-logo">El Periódico</div>
+    <div class="modal-sub">Learn Spanish through real news — B1 → B2 edition</div>
+    <label for="apiKeyInput">Your Anthropic API Key</label>
+    <input type="password" id="apiKeyInput" placeholder="sk-ant-..." autocomplete="off">
+    <button class="btn-primary" style="width:100%" onclick="startWithKey()">Start Learning →</button>
+    <div class="modal-note">
+      Your key is stored only in your browser's localStorage — never sent anywhere except directly to <strong>api.anthropic.com</strong>.<br>
+      Get a free key at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> (free tier works fine).
+    </div>
+    <div class="modal-demo" onclick="startDemo()">→ Try demo mode (sample article, no API key needed)</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="header">
+  <div>
+    <div class="header-title">EL PERIÓDICO</div>
+    <div class="header-sub">Learn Spanish through the news · B1 → B2</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px">
+    <span id="demoBadge" class="demo-badge" style="display:none">DEMO MODE</span>
+    <div class="level-badge">B1 → B2</div>
+    <button class="btn-outline" style="font-size:12px;padding:5px 10px;color:rgba(255,255,255,0.7);border-color:rgba(255,255,255,0.3)" onclick="changeKey()">⚙ API Key</button>
+  </div>
+</div>
+
+<div class="nav">
+  <button class="nav-btn active" onclick="switchTab('news',this)">📰 News</button>
+  <button class="nav-btn" onclick="switchTab('vocab',this)">📚 My Vocab</button>
+  <button class="nav-btn" onclick="switchTab('games',this)">🎮 Games</button>
+  <button class="nav-btn" onclick="switchTab('tips',this)">💡 Tips</button>
+</div>
+
+<div class="content">
+
+  <!-- NEWS TAB -->
+  <div id="tab-news" class="section active">
+    <div class="fetch-bar">
+      <select class="topic-select" id="topicSelect">
+        <option value="noticias internacionales">🌍 World News</option>
+        <option value="política latinoamericana">🗳 Latin American Politics</option>
+        <option value="tecnología e inteligencia artificial">💻 Technology & AI</option>
+        <option value="medio ambiente y clima">🌱 Environment & Climate</option>
+        <option value="economía y negocios">📈 Economy & Business</option>
+        <option value="cultura y sociedad">🎭 Culture & Society</option>
+        <option value="salud y ciencia">🔬 Health & Science</option>
+        <option value="deportes">⚽ Sports</option>
+      </select>
+      <button class="btn-primary" id="fetchBtn" onclick="fetchNews()">Fetch Article ↗</button>
+    </div>
+    <div id="newsContent">
+      <div class="placeholder">
+        <div class="placeholder-icon">📰</div>
+        <div class="placeholder-title">Tu periódico en español</div>
+        <div class="placeholder-text">Select a topic and click "Fetch Article" to get a real Spanish news story with vocabulary and grammar notes.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VOCAB TAB -->
+  <div id="tab-vocab" class="section">
+    <div class="tab-bar">
+      <button class="tab-btn active" onclick="switchVocabFilter('all',this)">All words</button>
+      <button class="tab-btn" onclick="switchVocabFilter('noun',this)">Nouns</button>
+      <button class="tab-btn" onclick="switchVocabFilter('verb',this)">Verbs</button>
+      <button class="tab-btn" onclick="switchVocabFilter('adj',this)">Adjectives</button>
+      <button class="tab-btn" onclick="switchVocabFilter('adv',this)">Adverbs</button>
+    </div>
+    <div id="vocabListArea"></div>
+  </div>
+
+  <!-- GAMES TAB -->
+  <div id="tab-games" class="section">
+    <div class="game-selector">
+      <div class="game-card active" onclick="selectGame('mcq',this)">
+        <div class="game-icon">🧠</div>
+        <div class="game-name">Multiple Choice</div>
+        <div class="game-desc">Pick the right translation</div>
+      </div>
+      <div class="game-card" onclick="selectGame('fill',this)">
+        <div class="game-icon">✏️</div>
+        <div class="game-name">Fill in the Blank</div>
+        <div class="game-desc">Type the Spanish word</div>
+      </div>
+      <div class="game-card" onclick="selectGame('reverse',this)">
+        <div class="game-icon">🔄</div>
+        <div class="game-name">Reverse Quiz</div>
+        <div class="game-desc">English → Spanish</div>
+      </div>
+      <div class="game-card" onclick="selectGame('flash',this)">
+        <div class="game-icon">⚡</div>
+        <div class="game-name">Flashcards</div>
+        <div class="game-desc">Flip and self-rate</div>
+      </div>
+    </div>
+    <div class="game-area" id="gameArea">
+      <div class="placeholder" style="padding:30px 0">
+        <div class="placeholder-title">No words yet</div>
+        <div class="placeholder-text">Fetch an article and save some words first, then come back to play!</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TIPS TAB -->
+  <div id="tab-tips" class="section">
+    <div class="tip-box">
+      <div class="tip-label">Your B2 Roadmap</div>
+      You have a strong foundation from your 5 months in Mexico and B1 certification. At B2 you'll read complex news fluently, understand implied meaning, and express nuanced opinions. Key focus areas: expanding formal register vocabulary, mastering the subjunctive, passive voice, and reported speech.
+    </div>
+    <div class="tip-box">
+      <div class="tip-label">Daily Routine (30 min)</div>
+      <strong>10 min</strong> — Read one article in this app, clicking every highlighted word<br>
+      <strong>10 min</strong> — Play a vocab game (aim for 80%+ accuracy)<br>
+      <strong>10 min</strong> — Listen to a Spanish podcast (Radio Ambulante is ideal for your level)
+    </div>
+    <div class="tip-box">
+      <div class="tip-label">Top Podcasts for B1→B2</div>
+      <strong>Radio Ambulante</strong> — Slow, clear narration, Latin American stories<br>
+      <strong>El Hilo</strong> — Weekly Latin American news analysis<br>
+      <strong>Coffee Break Spanish</strong> — Structured B1-B2 lessons<br>
+      <strong>Español con Juan</strong> — Grammar explained in Spanish
+    </div>
+    <div class="tip-box">
+      <div class="tip-label">B2 Grammar Targets</div>
+      Present Subjunctive · Imperfect Subjunctive · Conditional Perfect · Passive with <em>se</em> · Reported Speech · Por vs Para (advanced) · Relative Clauses (que / el cual / cuyo)
+    </div>
+    <div class="tip-box">
+      <div class="tip-label">Mexican Spanish vs News Spanish</div>
+      Your Mexican ear is a real asset! Be aware that news Spanish is more neutral. Watch for <em>vosotros</em> forms in Spanish outlets, and note that formal news writing uses <em>usted</em> consistently. Spanish news may use <em>leísmo</em> (using <em>le</em> instead of <em>lo</em> for masculine direct objects).
+    </div>
+    <div class="tip-box">
+      <div class="tip-label">Vocabulary Strategy</div>
+      At B2, focus on word families, not just single words. When you save <em>desarrollar</em> (to develop), also learn <em>el desarrollo</em>, <em>el desarrollador</em>, <em>desarrollado/a</em>. The Fill-in-the-Blank game is especially good for cementing form-to-meaning links.
+    </div>
+  </div>
+
+</div>
+
+<script>
+let apiKey = localStorage.getItem('ep_apikey') || '';
+let isDemo = false;
+let savedVocab = JSON.parse(localStorage.getItem('ep_vocab') || '[]');
+let currentVocab = [];
+let currentGame = 'mcq';
+let gameScore = 0;
+let gameTotal = 0;
+let flashIdx = 0;
+let flashFlipped = false;
+let vocabFilter = 'all';
+
+const DEMO_DATA = {
+  source: "BBC Mundo (Demo)",
+  headline: "La inteligencia artificial transforma el panorama laboral en América Latina",
+  body: "La [[inteligencia]] artificial está [[revolucionando]] el mercado de trabajo en toda América Latina. Según un informe reciente, millones de empleos podrían [[verse]] afectados en la próxima [[década]], aunque los expertos advierten que también se [[crearán]] nuevas oportunidades laborales. El [[impacto]] varía considerablemente según el [[sector]] económico y el nivel de [[digitalización]] de cada país. Los gobiernos de la región han comenzado a [[implementar]] políticas para [[fomentar]] la capacitación de los trabajadores en habilidades digitales. Sin embargo, la [[brecha]] tecnológica entre las zonas urbanas y rurales sigue siendo un [[desafío]] [[significativo]] para lograr una [[transición]] [[equitativa]] hacia la economía digital.",
+  vocab: [
+    { word: "inteligencia", pos: "noun", en: "intelligence", zh: "智慧", example: "La inteligencia artificial cambia el mundo." },
+    { word: "revolucionando", pos: "verb", en: "revolutionizing", zh: "革命化", example: "La tecnología está revolucionando la industria." },
+    { word: "década", pos: "noun", en: "decade", zh: "十年", example: "En la próxima década habrá grandes cambios." },
+    { word: "impacto", pos: "noun", en: "impact", zh: "衝擊；影響", example: "El impacto económico fue considerable." },
+    { word: "sector", pos: "noun", en: "sector / industry", zh: "行業；部門", example: "El sector tecnológico crece rápidamente." },
+    { word: "digitalización", pos: "noun", en: "digitalization", zh: "數位化", example: "La digitalización es clave para el futuro." },
+    { word: "implementar", pos: "verb", en: "to implement", zh: "實施；推行", example: "Es necesario implementar nuevas políticas." },
+    { word: "fomentar", pos: "verb", en: "to promote / to encourage", zh: "促進；鼓勵", example: "El gobierno fomenta la educación digital." },
+    { word: "brecha", pos: "noun", en: "gap / divide", zh: "鴻溝；差距", example: "La brecha digital sigue siendo grande." },
+    { word: "desafío", pos: "noun", en: "challenge", zh: "挑戰", example: "Este es un desafío significativo." },
+    { word: "equitativa", pos: "adj", en: "equitable / fair", zh: "公平的", example: "Queremos una distribución equitativa." },
+    { word: "transición", pos: "noun", en: "transition", zh: "過渡；轉型", example: "La transición hacia lo digital es inevitable." }
+  ],
+  grammar: [
+    {
+      title: "Subjunctive after 'para que' (Purpose clauses)",
+      explanation: "In Spanish, when expressing purpose ('so that', 'in order that'), use 'para que' followed by the subjunctive. This is a key B2 structure you'll see constantly in formal writing and news.",
+      example_es: "Los gobiernos implementan políticas para que los trabajadores se capaciten.",
+      example_en: "Governments implement policies so that workers can train themselves."
+    },
+    {
+      title: "Passive with 'se' (Pasiva refleja)",
+      explanation: "News Spanish frequently uses 'se + verb' to describe actions without specifying who does them — much more common than the full passive voice (ser + participio).",
+      example_es: "Se crearán nuevas oportunidades laborales en la próxima década.",
+      example_en: "New job opportunities will be created in the next decade."
+    }
+  ]
+};
+
+window.onload = function() {
+  if (apiKey) { document.getElementById('apiModal').style.display = 'none'; }
+};
+
+function startWithKey() {
+  const key = document.getElementById('apiKeyInput').value.trim();
+  if (!key.startsWith('sk-ant-')) { alert('Please enter a valid Anthropic API key (starts with sk-ant-).'); return; }
+  apiKey = key;
+  localStorage.setItem('ep_apikey', key);
+  isDemo = false;
+  document.getElementById('apiModal').style.display = 'none';
+}
+
+function startDemo() {
+  isDemo = true;
+  apiKey = '';
+  document.getElementById('apiModal').style.display = 'none';
+  document.getElementById('demoBadge').style.display = 'inline-block';
+  currentVocab = DEMO_DATA.vocab;
+  renderArticle(DEMO_DATA);
+}
+
+function changeKey() {
+  document.getElementById('apiKeyInput').value = '';
+  document.getElementById('apiModal').style.display = 'flex';
+}
+
+function switchTab(tab, btn) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  btn.classList.add('active');
+  if (tab === 'vocab') renderVocabList();
+  if (tab === 'games') initGame();
+}
+
+function switchVocabFilter(filter, btn) {
+  vocabFilter = filter;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderVocabList();
+}
+
+function selectGame(game, el) {
+  currentGame = game;
+  document.querySelectorAll('.game-card').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  gameScore = 0; gameTotal = 0;
+  initGame();
+}
+
+async function fetchNews() {
+  if (isDemo) { currentVocab = DEMO_DATA.vocab; renderArticle(DEMO_DATA); return; }
+  if (!apiKey) { document.getElementById('apiModal').style.display = 'flex'; return; }
+
+  const topic = document.getElementById('topicSelect').value;
+  const btn = document.getElementById('fetchBtn');
+  btn.disabled = true; btn.textContent = 'Cargando...';
+  document.getElementById('newsContent').innerHTML = `<div class="loading-box"><div class="spinner"></div><p>Buscando noticias sobre <strong>${topic}</strong>...</p></div>`;
+
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "anthropic-beta": "interleaved-thinking-2025-05-14"
+      },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 2000,
+        tools: [{ type: "web_search_20250305", name: "web_search" }],
+        system: `You are a Spanish language learning assistant. Search for a real recent Spanish-language news article and create a learning-optimized response.
+
+Steps:
+1. Search the web for a recent news article in Spanish on the topic given, from sources like BBC Mundo, El País, El Universal, CNN en Español, or similar outlets.
+2. Write a 160-200 word adapted excerpt in natural, authentic B1-B2 level Spanish.
+3. Identify 10-12 key vocabulary words that appear in the text.
+4. Note 1-2 grammar structures visible in the text that are useful for B2 learners.
+
+IMPORTANT: Respond with ONLY a raw JSON object. No markdown, no code fences, no explanation. The JSON must follow this exact schema:
+{
+  "source": "Outlet name",
+  "headline": "Spanish headline here",
+  "body": "Full Spanish text here. Wrap each vocabulary word exactly as it appears in the text with double brackets like [[palabra]] so they can be highlighted.",
+  "vocab": [
+    {"word": "palabra", "pos": "noun", "en": "English translation", "zh": "繁體中文翻譯", "example": "Example sentence in Spanish using this word."}
+  ],
+  "grammar": [
+    {"title": "Grammar point name", "explanation": "Clear B1-B2 explanation in English", "example_es": "Spanish sentence from or based on the article", "example_en": "English translation"}
+  ]
+}
+
+The "word" field in vocab must exactly match the form that appears in the body text inside [[ ]].`,
+        messages: [{ role: "user", content: `Find a recent Spanish news article about: ${topic}` }]
+      })
+    });
+
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+    const text = data.content.filter(b => b.type === 'text').map(b => b.text).join('\n');
+    const clean = text.replace(/```json|```/g, '').trim();
+    let parsed;
+    try { parsed = JSON.parse(clean); }
+    catch {
+      const m = clean.match(/\{[\s\S]*\}/);
+      if (m) parsed = JSON.parse(m[0]);
+      else throw new Error('Could not parse response as JSON. Try again.');
+    }
+    currentVocab = parsed.vocab || [];
+    renderArticle(parsed);
+  } catch(err) {
+    document.getElementById('newsContent').innerHTML = `<div class="error-box"><strong>Error fetching article:</strong> ${err.message}<br><br>Check your API key is valid and has credits. If using a new key, wait a minute and try again.</div>`;
+  }
+  btn.disabled = false; btn.textContent = 'Fetch Article ↗';
+}
+
+function renderArticle(data) {
+  let body = data.body || '';
+  (data.vocab || []).forEach(v => {
+    const re = new RegExp(`\\[\\[${v.word.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}\\]\\]`, 'g');
+    body = body.replace(re, `<span class="vocab-highlight" title="${v.en}">${v.word}</span>`);
+  });
+  body = body.replace(/\[\[([^\]]+)\]\]/g, '<span class="vocab-highlight">$1</span>');
+
+  const vocabHtml = (data.vocab || []).map((v, i) => `
+    <div class="vocab-card ${savedVocab.find(s=>s.word===v.word)?'saved':''}" id="vc-${i}">
+      <button class="vocab-save-btn" onclick="toggleSave(${i})" title="Save word">${savedVocab.find(s=>s.word===v.word)?'★':'☆'}</button>
+      <div class="vocab-word">${v.word}</div>
+      <div class="vocab-pos">${v.pos}</div>
+      <div class="vocab-en">🇬🇧 ${v.en}</div>
+      <div class="vocab-zh">🇹🇼 ${v.zh}</div>
+    </div>`).join('');
+
+  const grammarHtml = (data.grammar || []).map(g => `
+    <div class="grammar-box">
+      <div class="grammar-title">📐 ${g.title}</div>
+      <div class="grammar-body">${g.explanation}</div>
+      <div class="grammar-example">
+        <div class="grammar-es">${g.example_es}</div>
+        <div class="grammar-en">${g.example_en}</div>
+      </div>
+    </div>`).join('');
+
+  document.getElementById('newsContent').innerHTML = `
+    <div class="news-card">
+      <div class="news-source">${data.source}</div>
+      <div class="news-title">${data.headline}</div>
+      <div class="news-body">${body}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+        <button class="btn-outline" onclick="saveAllVocab()">★ Save All Words</button>
+        <button class="btn-outline" onclick="document.querySelector('[onclick*=games]').click()">Practice These Words 🎮</button>
+      </div>
+    </div>
+    <div class="vocab-section">
+      <div class="section-label">Vocabulary — click ★ to save a word</div>
+      <div class="vocab-grid">${vocabHtml}</div>
+    </div>
+    ${grammarHtml}`;
+}
+
+function toggleSave(idx) {
+  const v = currentVocab[idx]; if (!v) return;
+  const exists = savedVocab.findIndex(s => s.word === v.word);
+  if (exists >= 0) savedVocab.splice(exists, 1);
+  else savedVocab.push(v);
+  localStorage.setItem('ep_vocab', JSON.stringify(savedVocab));
+  const card = document.getElementById('vc-' + idx);
+  const btn = card.querySelector('.vocab-save-btn');
+  if (exists >= 0) { card.classList.remove('saved'); btn.textContent = '☆'; }
+  else { card.classList.add('saved'); btn.textContent = '★'; }
+}
+
+function saveAllVocab() {
+  currentVocab.forEach(v => { if (!savedVocab.find(s=>s.word===v.word)) savedVocab.push(v); });
+  localStorage.setItem('ep_vocab', JSON.stringify(savedVocab));
+  document.querySelectorAll('.vocab-card').forEach((c,i) => { c.classList.add('saved'); const b = c.querySelector('.vocab-save-btn'); if(b) b.textContent = '★'; });
+}
+
+function renderVocabList() {
+  const area = document.getElementById('vocabListArea');
+  const filtered = vocabFilter === 'all' ? [...savedVocab] : savedVocab.filter(v => v.pos && v.pos.toLowerCase().startsWith(vocabFilter));
+  if (!filtered.length) {
+    area.innerHTML = `<div class="placeholder"><div class="placeholder-icon">📚</div><div class="placeholder-title">No words saved yet</div><div class="placeholder-text">Fetch a news article and tap ★ to save words here.</div></div>`;
+    return;
+  }
+  area.innerHTML = `<div style="font-size:13px;color:var(--muted);margin-bottom:12px">${filtered.length} word${filtered.length!==1?'s':''} saved</div>
+    <div class="saved-list">${filtered.map(v => `
+      <div class="saved-item">
+        <div>
+          <div class="saved-word">${v.word}</div>
+          <div class="saved-translations">🇬🇧 ${v.en} &nbsp;·&nbsp; 🇹🇼 ${v.zh}</div>
+          ${v.example ? `<div style="font-size:12px;color:var(--muted);margin-top:4px;font-style:italic">${v.example}</div>` : ''}
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-shrink:0">
+          <span class="saved-tag">${v.pos}</span>
+          <button style="background:none;border:none;cursor:pointer;color:#c0392b;font-size:18px;line-height:1" onclick="removeWord('${v.word.replace(/'/g,"\\'")}')">×</button>
+        </div>
+      </div>`).join('')}
+    </div>`;
+}
+
+function removeWord(word) {
+  savedVocab = savedVocab.filter(v => v.word !== word);
+  localStorage.setItem('ep_vocab', JSON.stringify(savedVocab));
+  renderVocabList();
+}
+
+function getPool() {
+  const pool = [...savedVocab];
+  currentVocab.forEach(v => { if (!pool.find(p=>p.word===v.word)) pool.push(v); });
+  return pool;
+}
+
+function initGame() {
+  gameScore = 0; gameTotal = 0; flashIdx = 0;
+  const pool = getPool();
+  if (pool.length < 3) {
+    document.getElementById('gameArea').innerHTML = `<div class="placeholder" style="padding:30px 0"><div class="placeholder-title">Need more words!</div><div class="placeholder-text">Fetch at least one article and save some words to start playing.</div></div>`;
+    return;
+  }
+  nextRound();
+}
+
+function nextRound() {
+  const pool = getPool();
+  if (pool.length < 3) { initGame(); return; }
+  if (currentGame === 'mcq') renderMCQ(pool);
+  else if (currentGame === 'fill') renderFill(pool);
+  else if (currentGame === 'reverse') renderReverse(pool);
+  else renderFlash(pool);
+}
+
+function scoreBar() {
+  return `<div class="score-bar"><span>Question ${gameTotal + 1}</span><span class="score-val">✓ ${gameScore} / ${gameTotal}</span></div>`;
+}
+
+function randItem(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+function renderMCQ(pool) {
+  const correct = randItem(pool);
+  const others = pool.filter(w => w.word !== correct.word).sort(()=>Math.random()-0.5).slice(0,3);
+  const opts = [...others, correct].sort(()=>Math.random()-0.5);
+  document.getElementById('gameArea').innerHTML = `
+    ${scoreBar()}
+    <div class="game-question">${correct.word}</div>
+    <div style="text-align:center;color:var(--muted);font-size:12px;margin-bottom:16px;font-style:italic">${correct.pos}</div>
+    <div class="game-options">
+      ${opts.map(o => `<button class="game-option" onclick="checkMCQ(this,'${o.word}','${correct.word}')">${o.en}</button>`).join('')}
+    </div>`;
+}
+
+function checkMCQ(btn, chosen, correct) {
+  gameTotal++;
+  document.querySelectorAll('.game-option').forEach(b => b.onclick = null);
+  if (chosen === correct) { btn.classList.add('correct'); gameScore++; setTimeout(nextRound, 1200); }
+  else {
+    btn.classList.add('wrong');
+    document.querySelectorAll('.game-option').forEach(b => { if (b.textContent === getPool().find(v=>v.word===correct)?.en) b.classList.add('correct'); });
+    setTimeout(nextRound, 1800);
+  }
+}
+
+function renderReverse(pool) {
+  const correct = randItem(pool);
+  const others = pool.filter(w => w.word !== correct.word).sort(()=>Math.random()-0.5).slice(0,3);
+  const opts = [...others, correct].sort(()=>Math.random()-0.5);
+  document.getElementById('gameArea').innerHTML = `
+    ${scoreBar()}
+    <div class="game-question">${correct.en}</div>
+    <div style="text-align:center;color:var(--muted);font-size:12px;margin-bottom:16px">🇹🇼 ${correct.zh}</div>
+    <div class="game-options">
+      ${opts.map(o => `<button class="game-option" onclick="checkReverse(this,'${o.word}','${correct.word}')">${o.word}</button>`).join('')}
+    </div>`;
+}
+
+function checkReverse(btn, chosen, correct) {
+  gameTotal++;
+  document.querySelectorAll('.game-option').forEach(b => b.onclick = null);
+  if (chosen === correct) { btn.classList.add('correct'); gameScore++; setTimeout(nextRound, 1200); }
+  else {
+    btn.classList.add('wrong');
+    document.querySelectorAll('.game-option').forEach(b => { if(b.textContent === correct) b.classList.add('correct'); });
+    setTimeout(nextRound, 1800);
+  }
+}
+
+function renderFill(pool) {
+  const correct = randItem(pool);
+  document.getElementById('gameArea').innerHTML = `
+    ${scoreBar()}
+    <div style="text-align:center;color:var(--muted);font-size:13px;margin-bottom:10px">Type the Spanish word for:</div>
+    <div class="game-question" style="font-size:20px;margin-bottom:8px">${correct.en}</div>
+    <div style="text-align:center;font-size:13px;color:var(--muted);margin-bottom:20px;font-style:italic">🇹🇼 ${correct.zh} &nbsp;·&nbsp; ${correct.pos}</div>
+    <input class="fill-input" id="fillInput" placeholder="Escribe en español..." onkeydown="if(event.key==='Enter')checkFill('${correct.word.replace(/'/g,"\\'")}')">
+    <button class="btn-primary" style="width:100%;margin-top:4px" onclick="checkFill('${correct.word.replace(/'/g,"\\'")}')">Check →</button>
+    <div id="fillFeedback"></div>`;
+  setTimeout(() => { const el = document.getElementById('fillInput'); if(el) el.focus(); }, 50);
+}
+
+function checkFill(correct) {
+  const input = document.getElementById('fillInput'); if(!input) return;
+  const val = input.value.trim().toLowerCase();
+  const norm = s => s.normalize('NFD').replace(/\p{Mn}/gu,'').toLowerCase();
+  gameTotal++;
+  if (val === correct.toLowerCase() || norm(val) === norm(correct)) {
+    input.classList.add('correct'); gameScore++;
+    document.getElementById('fillFeedback').innerHTML = `<div class="feedback-msg correct">¡Perfecto! ✓</div>`;
+    setTimeout(nextRound, 1500);
+  } else {
+    input.classList.add('wrong');
+    document.getElementById('fillFeedback').innerHTML = `<div class="feedback-msg wrong">The answer was: <strong>${correct}</strong></div>`;
+    setTimeout(nextRound, 2200);
+  }
+}
+
+function renderFlash(pool) {
+  const word = pool[flashIdx % pool.length];
+  flashFlipped = false;
+  document.getElementById('gameArea').innerHTML = `
+    ${scoreBar()}
+    <div style="text-align:center;color:var(--muted);font-size:12px;margin-bottom:12px">Card ${(flashIdx % pool.length)+1} of ${pool.length} · Click card to flip</div>
+    <div id="flashCard" onclick="flipFlash('${word.en.replace(/'/g,"\\'")}','${word.zh.replace(/'/g,"\\'")}','${(word.example||'').replace(/'/g,"\\'")}')"
+      style="background:#fafafa;border:1.5px solid var(--border);border-radius:16px;padding:40px 24px;text-align:center;cursor:pointer;min-height:160px;display:flex;align-items:center;justify-content:center;flex-direction:column;transition:all 0.25s">
+      <div style="font-family:'Playfair Display',serif;font-size:28px;color:var(--primary);font-weight:700">${word.word}</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:8px;font-style:italic">${word.pos}</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:16px">Tap to reveal →</div>
+    </div>
+    <div id="flashBtns" style="display:none;margin-top:16px;gap:10px;justify-content:center">
+      <button class="btn-outline" style="border-color:var(--red);color:var(--red)" onclick="rateFlash(false)">✗ Again</button>
+      <button class="btn-outline" style="border-color:var(--green);color:var(--green)" onclick="rateFlash(true)">✓ Got it</button>
+    </div>`;
+}
+
+function flipFlash(en, zh, example) {
+  if (flashFlipped) return; flashFlipped = true;
+  const card = document.getElementById('flashCard');
+  card.style.background = '#f5e9c8';
+  card.innerHTML = `<div><div style="font-size:16px;color:var(--primary);margin-bottom:6px">🇬🇧 ${en}</div><div style="font-size:16px;color:var(--blue);margin-bottom:10px">🇹🇼 ${zh}</div>${example?`<div style="font-size:13px;color:var(--muted);font-style:italic;margin-top:6px">${example}</div>`:''}</div>`;
+  const btns = document.getElementById('flashBtns');
+  if(btns) btns.style.display = 'flex';
+}
+
+function rateFlash(correct) {
+  gameTotal++; if(correct) gameScore++;
+  flashIdx++;
+  renderFlash(getPool());
+}
+</script>
+</body>
+</html>
